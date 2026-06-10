@@ -4,9 +4,9 @@ description: >-
   required actions before advancing — the first showcase package with real
   step validation.
 version: 1.0.0
-homepage: https://github.com/spotlight-tour/spotlight_tour
-repository: https://github.com/spotlight-tour/spotlight_tour
-issue_tracker: https://github.com/spotlight-tour/spotlight_tour/issues
+homepage: https://github.com/UmarAnayat/spotlight_tour
+repository: https://github.com/UmarAnayat/spotlight_tour
+issue_tracker: https://github.com/UmarAnayat/spotlight_tour/issues
 
 environment:
   sdk: ^3.11.5

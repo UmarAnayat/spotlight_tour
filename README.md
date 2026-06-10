@@ -1,10 +1,42 @@
 # Spotlight Tour
 
 [![pub package](https://img.shields.io/pub/v/spotlight_tour.svg)](https://pub.dev/packages/spotlight_tour)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **The first Flutter onboarding package with real interactive step validation.**
 
-Traditional showcase packages only highlight widgets and let users click "Next." Spotlight Tour verifies that users actually perform the required action before advancing — creating real onboarding, not slideshows.
+Traditional showcase packages only highlight widgets and let users click **Next**.  
+Spotlight Tour verifies that users actually perform the required action before advancing — creating **real onboarding**, not slideshows.
+
+<p align="center">
+  <img src="doc/screenshots/comparison_traditional_vs_spotlight.png" alt="Traditional Showcase vs Spotlight Tour" width="700"/>
+</p>
+
+---
+
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="doc/screenshots/spotlight_search_step.png" alt="Tap to search step" width="260"/><br/>
+      <b>Tap validation</b><br/>
+      <sub>User must tap the search button</sub>
+    </td>
+    <td align="center">
+      <img src="doc/screenshots/spotlight_profile_step.png" alt="Long-press profile step" width="260"/><br/>
+      <b>Long-press validation</b><br/>
+      <sub>User must long-press the profile icon</sub>
+    </td>
+    <td align="center">
+      <img src="doc/screenshots/spotlight_cart_step.png" alt="Custom validator step" width="260"/><br/>
+      <b>Custom validator</b><br/>
+      <sub>Next enabled after cart action</sub>
+    </td>
+  </tr>
+</table>
+
+---
 
 ## Why Spotlight Tour?
 
@@ -12,18 +44,24 @@ Traditional showcase packages only highlight widgets and let users click "Next."
 |---|---|
 | Step 1 → Click Next | Step 1 → **Tap Search Button** |
 | Step 2 → Click Next | Step 2 → **Long-press Profile** |
-| Step 3 → Click Next | Step 3 → **Double-tap FAB** |
+| Step 3 → Click Next | Step 3 → **Add to Cart, then Next** |
 | Tutorial completed ✓ | Tutorial completed ✓ |
+
+---
 
 ## Features
 
-- **Interactive step validation** — tap, double-tap, long-press, or custom async validators
-- **Premium spotlight effects** — dimming, cutout, border glow, pulse animation
-- **Smart tooltips** — title, description, custom widgets, auto-positioning
-- **Progress indicators** — step counter and linear progress bar
-- **Navigation controls** — Next, Back, and Skip buttons
-- **Material 3 & Cupertino** — native-feeling themes on every platform
-- **Multi-platform** — Android, iOS, and Web (desktop-ready architecture)
+| Feature | Description |
+|---|---|
+| **Interactive validation** | Tap, double-tap, long-press, or custom async validators |
+| **Premium spotlight** | Dimming, cutout, border glow, pulse animation |
+| **Smart tooltips** | Title, description, custom widgets, auto-positioning |
+| **Progress system** | Step counter + linear progress bar |
+| **Navigation controls** | Next, Back, and Skip buttons |
+| **Material 3 & Cupertino** | Native-feeling themes on every platform |
+| **Multi-platform** | Android, iOS, and Web |
+
+---
 
 ## Installation
 
@@ -40,6 +78,8 @@ Then run:
 flutter pub get
 ```
 
+---
+
 ## Quick Start
 
 ```dart
@@ -48,14 +88,14 @@ import 'package:spotlight_tour/spotlight_tour.dart';
 
 final GlobalKey searchKey = GlobalKey();
 
-// Attach the key to your target widget
+// 1. Attach the key to your target widget
 IconButton(
   key: searchKey,
   icon: const Icon(Icons.search),
   onPressed: () => openSearch(),
 )
 
-// Start the tour
+// 2. Start the tour
 SpotlightTour.start(
   context,
   steps: [
@@ -69,6 +109,8 @@ SpotlightTour.start(
 );
 ```
 
+---
+
 ## Interactive Validation
 
 ### Required gestures
@@ -76,13 +118,14 @@ SpotlightTour.start(
 ```dart
 TourStep(
   targetKey: searchKey,
-  requiredAction: RequiredAction.tap,       // tap
-  // requiredAction: RequiredAction.doubleTap,  // double-tap
-  // requiredAction: RequiredAction.longPress,  // long-press
+  requiredAction: RequiredAction.tap,        // tap
+  // requiredAction: RequiredAction.doubleTap, // double-tap
+  // requiredAction: RequiredAction.longPress, // long-press
 )
 ```
 
 When a required action is set:
+
 - The **Next** button stays disabled until the user performs the action
 - The tour **auto-advances** once validation succeeds
 - Touches pass through the spotlight hole to the real widget underneath
@@ -102,13 +145,15 @@ TourStep(
 
 Call `SpotlightTour.controller?.refreshValidation()` when external state changes.
 
+---
+
 ## Spotlight Styling
 
 ```dart
 TourStep(
   targetKey: myKey,
   spotlightStyle: SpotlightStyle(
-    shape: SpotlightShape.roundedRectangle, // circle | rectangle | roundedRectangle
+    shape: SpotlightShape.roundedRectangle,
     blurStrength: 8,
     borderWidth: 3,
     showGlow: true,
@@ -119,6 +164,10 @@ TourStep(
 )
 ```
 
+Supported shapes: `circle` · `rectangle` · `roundedRectangle`
+
+---
+
 ## Tooltip Positioning
 
 ```dart
@@ -126,20 +175,13 @@ TourStep(
   targetKey: myKey,
   title: 'Hello',
   description: 'World',
-  tooltipPosition: TooltipPosition.auto, // top | bottom | left | right | auto
+  tooltipPosition: TooltipPosition.auto,
 )
 ```
 
 Auto mode detects available space, respects safe areas, and avoids keyboard overlap.
 
-## Custom Tooltips
-
-```dart
-TourStep(
-  targetKey: myKey,
-  customTooltip: MyCustomTooltip(),
-)
-```
+---
 
 ## Progress & Navigation
 
@@ -147,7 +189,7 @@ TourStep(
 SpotlightTour.start(
   context,
   steps: steps,
-  showProgress: true,      // "Step 2 of 5" + linear bar
+  showProgress: true,
   showNextButton: true,
   showBackButton: true,
   showSkipButton: true,
@@ -156,41 +198,65 @@ SpotlightTour.start(
 );
 ```
 
+---
+
 ## Theming
 
-### Material 3
-
 ```dart
-SpotlightTour.start(
-  context,
-  theme: SpotlightTourTheme.material3(),
-  steps: steps,
-);
-```
+// Material 3 (default on Android)
+SpotlightTour.start(context, theme: SpotlightTourTheme.material3(), steps: steps);
 
-### Cupertino (iOS)
+// Cupertino (iOS-native feel)
+SpotlightTour.start(context, theme: SpotlightTourTheme.cupertino(), steps: steps);
 
-```dart
-SpotlightTour.start(
-  context,
-  theme: SpotlightTourTheme.cupertino(),
-  steps: steps,
-);
-```
-
-### Custom
-
-```dart
+// Custom
 SpotlightTour.start(
   context,
   theme: SpotlightTourTheme(
     primaryColor: Colors.blue,
     borderRadius: 24,
-    backgroundColor: Colors.white,
   ),
   steps: steps,
 );
 ```
+
+---
+
+## Example App
+
+```bash
+git clone https://github.com/UmarAnayat/spotlight_tour.git
+cd spotlight_tour/example
+flutter run
+```
+
+The example demonstrates tap, long-press, double-tap validation, custom validators, spotlight effects, and auto tooltip positioning.
+
+---
+
+## Platform Support
+
+| Platform | Status |
+|---|---|
+| Android | ✅ Supported |
+| iOS | ✅ Supported |
+| Web | ✅ Supported |
+| Windows | 🔜 Architecture ready |
+| macOS | 🔜 Architecture ready |
+| Linux | 🔜 Architecture ready |
+
+---
+
+## Performance
+
+Built for **60 FPS** with:
+
+- `OverlayEntry` for efficient overlay rendering
+- `RepaintBoundary` to isolate repaints
+- `CustomPainter` for the spotlight effect
+- Custom hit-testing so touches pass through the spotlight hole
+
+---
 
 ## API Reference
 
@@ -207,7 +273,7 @@ SpotlightTour.start(
 
 | Parameter | Type | Description |
 |---|---|---|
-| `targetKey` | `GlobalKey` | Widget to highlight (required) |
+| `targetKey` | `GlobalKey` | Widget to highlight **(required)** |
 | `title` | `String?` | Tooltip title |
 | `description` | `String?` | Tooltip description |
 | `customTooltip` | `Widget?` | Custom tooltip widget |
@@ -215,39 +281,16 @@ SpotlightTour.start(
 | `validator` | `Future<bool> Function()?` | Custom validation |
 | `spotlightStyle` | `SpotlightStyle?` | Per-step spotlight style |
 | `tooltipPosition` | `TooltipPosition` | Tooltip placement |
-| `onStepEnter` | `VoidCallback?` | Called when step becomes active |
-| `onStepExit` | `VoidCallback?` | Called when leaving step |
 | `onValidated` | `VoidCallback?` | Called on successful validation |
 
-## Example App
+---
 
-```bash
-cd example
-flutter run
-```
+## Contributing
 
-The example demonstrates all V1 features: interactive tap/long-press/double-tap validation, custom validators, spotlight effects, auto tooltip positioning, and navigation controls.
+Issues and pull requests are welcome on [GitHub](https://github.com/UmarAnayat/spotlight_tour).
 
-## Platform Support
-
-| Platform | Status |
-|---|---|
-| Android | ✅ Supported |
-| iOS | ✅ Supported |
-| Web | ✅ Supported |
-| Windows | 🔜 Architecture ready |
-| macOS | 🔜 Architecture ready |
-| Linux | 🔜 Architecture ready |
-
-## Performance
-
-Spotlight Tour is built for 60 FPS:
-
-- `OverlayEntry` for efficient overlay rendering
-- `RepaintBoundary` to isolate repaints
-- `CustomPainter` for the spotlight effect
-- Custom hit-testing so touches pass through the spotlight hole
+---
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT © [Umar Anayat](https://github.com/UmarAnayat) — see [LICENSE](LICENSE).
