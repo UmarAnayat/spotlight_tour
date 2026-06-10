@@ -1,0 +1,24 @@
+name: spotlight_tour
+description: >-
+  Interactive Flutter onboarding with spotlight highlights. Users must perform
+  required actions before advancing — the first showcase package with real
+  step validation.
+version: 1.0.0
+homepage: https://github.com/spotlight-tour/spotlight_tour
+repository: https://github.com/spotlight-tour/spotlight_tour
+issue_tracker: https://github.com/spotlight-tour/spotlight_tour/issues
+
+environment:
+  sdk: ^3.11.5
+  flutter: ">=3.16.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
