@@ -69,7 +69,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  spotlight_tour: ^1.0.0
+  spotlight_tour: ^1.0.1
 ```
 
 Then run:

@@ -7,6 +7,7 @@ import '../models/tour_step.dart';
 
 /// Manages tour state, navigation, and interactive validation.
 class SpotlightTourController extends ChangeNotifier {
+  /// Creates a controller for the given [config].
   SpotlightTourController({required TourConfig config}) : _config = config {
     _currentIndex = 0;
     _validated = !_config.steps.first.requiresInteraction;
