@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2.0.0
+
+### Added
+
+* **Analytics callbacks:** `onTourStarted`, `onTourCompleted`, `onTourSkipped`, `onStepChanged`.
+* **Global event stream:** `SpotlightTour.events` with `TourEventType` lifecycle events.
+* **Lottie support:** `TourStep.lottieAsset` with looping animations in tooltips.
+* **JSON-driven tours:** `TourJsonLoader.loadAsset()`, `loadString()`, `loadMap()`.
+* **Tooltip animations:** `TooltipAnimationType` — fade, slide, scale, bounce.
+* **Step indicators:** `StepIndicatorType` — text, dots, linear.
+* **Multi-target spotlight:** `TourStep.targetKeys` for highlighting multiple widgets.
+* **Programmatic control:** `pause()`, `resume()`, `previous()`, `finish()` on controller.
+* **Accessibility:** Semantics labels, keyboard navigation (Enter, Tab, Escape).
+* **Theme extensions:** button, progress, indicator, and animation style customization.
+
+### Changed
+
+* `SpotlightTour.start()` accepts `indicatorType` and `animationType`.
+* `SpotlightPainter` and `SpotlightHitTest` support multiple spotlight cutouts.
+* `TourAnalytics` ensures lifecycle callbacks fire exactly once.
+
+### Notes
+
+* All V1 APIs remain backward compatible.
+* `onComplete` and `onSkip` continue to work alongside new analytics callbacks.
+
 ## 1.0.2
 
 ### Fixed

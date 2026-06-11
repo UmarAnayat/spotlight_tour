@@ -3,10 +3,19 @@
 [![pub package](https://img.shields.io/pub/v/spotlight_tour.svg)](https://pub.dev/packages/spotlight_tour)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**The first Flutter onboarding package with real interactive step validation.**
+**Professional Flutter onboarding with real interactive step validation.**
 
-Traditional showcase packages only highlight widgets and let users click **Next**.  
-Spotlight Tour verifies that users actually perform the required action before advancing — creating **real onboarding**, not slideshows.
+Users must perform required actions before advancing — not just click Next. V2 adds analytics, JSON tours, Lottie animations, multi-target spotlights, and a full event stream.
+
+## Demo
+
+<p align="center">
+  <img src="doc/video/spotlight_tour_demo.gif" alt="Spotlight Tour demo — tap, long-press, validator, and double-tap steps" width="320"/>
+</p>
+
+<p align="center">
+  <sub>Interactive tour: tap → long-press → custom validator → double-tap → complete</sub>
+</p>
 
 <p align="center">
   <img src="doc/screenshots/comparison_traditional_vs_spotlight.png" alt="Traditional Showcase vs Spotlight Tour" width="700"/>
@@ -16,63 +25,52 @@ Spotlight Tour verifies that users actually perform the required action before a
 
 ## Screenshots
 
+> Full demo video: [`doc/video/spotlight_tour_demo.mp4`](doc/video/spotlight_tour_demo.mp4)
+
 <table>
   <tr>
     <td align="center">
-      <img src="doc/screenshots/spotlight_search_step.png" alt="Tap to search step" width="260"/><br/>
-      <b>Tap validation</b><br/>
-      <sub>User must tap the search button</sub>
+      <img src="doc/screenshots/spotlight_search_step.png" alt="Tap validation" width="260"/><br/>
+      <b>Tap validation</b>
     </td>
     <td align="center">
-      <img src="doc/screenshots/spotlight_profile_step.png" alt="Long-press profile step" width="260"/><br/>
-      <b>Long-press validation</b><br/>
-      <sub>User must long-press the profile icon</sub>
+      <img src="doc/screenshots/spotlight_profile_step.png" alt="Long-press validation" width="260"/><br/>
+      <b>Long-press validation</b>
     </td>
     <td align="center">
-      <img src="doc/screenshots/spotlight_cart_step.png" alt="Custom validator step" width="260"/><br/>
-      <b>Custom validator</b><br/>
-      <sub>Next enabled after cart action</sub>
+      <img src="doc/screenshots/spotlight_cart_step.png" alt="Custom validator" width="260"/><br/>
+      <b>Custom validator</b>
     </td>
   </tr>
 </table>
 
 ---
 
-## Why Spotlight Tour?
+## Feature Comparison
 
-| Traditional Showcase | Spotlight Tour |
-|---|---|
-| Step 1 → Click Next | Step 1 → **Tap Search Button** |
-| Step 2 → Click Next | Step 2 → **Long-press Profile** |
-| Step 3 → Click Next | Step 3 → **Add to Cart, then Next** |
-| Tutorial completed ✓ | Tutorial completed ✓ |
-
----
-
-## Features
-
-| Feature | Description |
-|---|---|
-| **Interactive validation** | Tap, double-tap, long-press, or custom async validators |
-| **Premium spotlight** | Dimming, cutout, border glow, pulse animation |
-| **Smart tooltips** | Title, description, custom widgets, auto-positioning |
-| **Progress system** | Step counter + linear progress bar |
-| **Navigation controls** | Next, Back, and Skip buttons |
-| **Material 3 & Cupertino** | Native-feeling themes on every platform |
-| **Multi-platform** | Android, iOS, and Web |
+| Feature | V1 | V2 |
+|---|---|---|
+| Interactive validation | ✅ | ✅ |
+| Spotlight effects | ✅ | ✅ |
+| Smart tooltips | ✅ | ✅ |
+| Analytics callbacks | — | ✅ |
+| Global event stream | — | ✅ |
+| JSON-driven tours | — | ✅ |
+| Lottie animations | — | ✅ |
+| Tooltip animations | — | ✅ |
+| Step indicators (dots/text/linear) | — | ✅ |
+| Multi-target spotlight | — | ✅ |
+| Pause / Resume | — | ✅ |
+| Accessibility | — | ✅ |
 
 ---
 
 ## Installation
 
-Add to your `pubspec.yaml`:
-
 ```yaml
 dependencies:
-  spotlight_tour: ^1.0.2
+  spotlight_tour: ^2.0.0
 ```
-
-Then run:
 
 ```bash
 flutter pub get
@@ -88,14 +86,6 @@ import 'package:spotlight_tour/spotlight_tour.dart';
 
 final GlobalKey searchKey = GlobalKey();
 
-// 1. Attach the key to your target widget
-IconButton(
-  key: searchKey,
-  icon: const Icon(Icons.search),
-  onPressed: () => openSearch(),
-)
-
-// 2. Start the tour
 SpotlightTour.start(
   context,
   steps: [
@@ -111,183 +101,185 @@ SpotlightTour.start(
 
 ---
 
-## Interactive Validation
+## Analytics (V2)
 
-### Required gestures
+```dart
+SpotlightTour.start(
+  context,
+  steps: steps,
+  onTourStarted: () => analytics.log('tour_started'),
+  onTourCompleted: () => analytics.log('tour_completed'),
+  onTourSkipped: () => analytics.log('tour_skipped'),
+  onStepChanged: (index) => analytics.log('step_$index'),
+);
+```
+
+Callbacks fire **exactly once** per tour lifecycle.
+
+---
+
+## Global Events (V2)
+
+```dart
+SpotlightTour.events.listen((event) {
+  switch (event.type) {
+    case TourEventType.tourStarted:
+      break;
+    case TourEventType.validationPassed:
+      break;
+    case TourEventType.stepChanged:
+      print('Step ${event.stepIndex}');
+      break;
+    default:
+      break;
+  }
+});
+```
+
+---
+
+## JSON Tours (V2)
+
+`assets/onboarding.json`:
+
+```json
+{
+  "steps": [
+    {
+      "id": "search",
+      "title": "Search Products",
+      "description": "Tap search button",
+      "requiredAction": "tap",
+      "tooltipPosition": "bottom",
+      "shape": "roundedRectangle",
+      "animationType": "bounce"
+    }
+  ]
+}
+```
+
+```dart
+final steps = await TourJsonLoader.loadAsset(
+  'assets/onboarding.json',
+  keyRegistry: {'search': searchKey},
+  validatorRegistry: {
+    'cart_ready': () async => cartCount > 0,
+  },
+);
+
+SpotlightTour.start(context, steps: steps);
+```
+
+---
+
+## Lottie (V2)
 
 ```dart
 TourStep(
   targetKey: searchKey,
-  requiredAction: RequiredAction.tap,        // tap
-  // requiredAction: RequiredAction.doubleTap, // double-tap
-  // requiredAction: RequiredAction.longPress, // long-press
+  title: 'Search',
+  description: 'Tap the search button.',
+  lottieAsset: 'assets/lottie/search.json',
+  requiredAction: RequiredAction.tap,
 )
 ```
-
-When a required action is set:
-
-- The **Next** button stays disabled until the user performs the action
-- The tour **auto-advances** once validation succeeds
-- Touches pass through the spotlight hole to the real widget underneath
-
-### Custom validators
-
-```dart
-bool userCompletedAction = false;
-
-TourStep(
-  targetKey: cartKey,
-  title: 'Add to Cart',
-  description: 'Add an item, then tap Next.',
-  validator: () async => userCompletedAction,
-)
-```
-
-Call `SpotlightTour.controller?.refreshValidation()` when external state changes.
 
 ---
 
-## Spotlight Styling
+## Multi-Target Spotlight (V2)
 
 ```dart
 TourStep(
-  targetKey: myKey,
-  spotlightStyle: SpotlightStyle(
-    shape: SpotlightShape.roundedRectangle,
-    blurStrength: 8,
-    borderWidth: 3,
-    showGlow: true,
-    pulseAnimation: true,
-    padding: 8,
-    borderRadius: 12,
-  ),
+  targetKey: searchKey,
+  targetKeys: [searchKey, filterKey, sortKey],
+  title: 'Toolbar',
+  description: 'Use these controls to find products.',
 )
 ```
 
-Supported shapes: `circle` · `rectangle` · `roundedRectangle`
-
 ---
 
-## Tooltip Positioning
+## Tooltip Animations (V2)
 
 ```dart
+SpotlightTour.start(
+  context,
+  steps: steps,
+  animationType: TooltipAnimationType.bounce,
+);
+
 TourStep(
   targetKey: myKey,
+  animationType: TooltipAnimationType.slide,
   title: 'Hello',
-  description: 'World',
-  tooltipPosition: TooltipPosition.auto,
-)
-```
-
-Auto mode detects available space, respects safe areas, and avoids keyboard overlap.
-
----
-
-## Progress & Navigation
-
-```dart
-SpotlightTour.start(
-  context,
-  steps: steps,
-  showProgress: true,
-  showNextButton: true,
-  showBackButton: true,
-  showSkipButton: true,
-  onComplete: () => print('Done!'),
-  onSkip: () => print('Skipped'),
 );
 ```
 
 ---
 
-## Theming
+## Step Indicators (V2)
 
 ```dart
-// Material 3 (default on Android)
-SpotlightTour.start(context, theme: SpotlightTourTheme.material3(), steps: steps);
-
-// Cupertino (iOS-native feel)
-SpotlightTour.start(context, theme: SpotlightTourTheme.cupertino(), steps: steps);
-
-// Custom
 SpotlightTour.start(
   context,
-  theme: SpotlightTourTheme(
-    primaryColor: Colors.blue,
-    borderRadius: 24,
-  ),
   steps: steps,
+  indicatorType: StepIndicatorType.dots,
 );
 ```
 
+Options: `StepIndicatorType.text` · `dots` · `linear`
+
 ---
 
-## Example App
+## Programmatic Control (V2)
 
-```bash
-git clone https://github.com/UmarAnayat/spotlight_tour.git
-cd spotlight_tour/example
-flutter run
+```dart
+final controller = SpotlightTour.controller;
+
+controller?.next();
+controller?.previous();
+controller?.skip();
+controller?.finish();
+controller?.pause();
+controller?.resume();
 ```
 
-The example demonstrates tap, long-press, double-tap validation, custom validators, spotlight effects, and auto tooltip positioning.
-
 ---
 
-## Platform Support
+## Migration Guide (V1 → V2)
 
-| Platform | Status |
+V2 is **fully backward compatible**. No code changes required.
+
+| V1 API | V2 Status |
 |---|---|
-| Android | ✅ Supported |
-| iOS | ✅ Supported |
-| Web | ✅ Supported |
-| Windows | 🔜 Architecture ready |
-| macOS | 🔜 Architecture ready |
-| Linux | 🔜 Architecture ready |
+| `SpotlightTour.start()` | Unchanged |
+| `TourStep(targetKey: ...)` | Unchanged |
+| `onComplete` / `onSkip` | Still works |
+| `RequiredAction` | Unchanged |
+
+New features are opt-in via additional optional parameters.
 
 ---
 
-## Performance
+## Roadmap
 
-Built for **60 FPS** with:
-
-- `OverlayEntry` for efficient overlay rendering
-- `RepaintBoundary` to isolate repaints
-- `CustomPainter` for the spotlight effect
-- Custom hit-testing so touches pass through the spotlight hole
-
----
-
-## API Reference
-
-### `SpotlightTour`
-
-| Method / Property | Description |
+| Version | Features |
 |---|---|
-| `SpotlightTour.start(context, steps: [...])` | Start a tour |
-| `SpotlightTour.stop()` | Dismiss the active tour |
-| `SpotlightTour.isActive` | Whether a tour is running |
-| `SpotlightTour.controller` | Active controller for advanced use |
-
-### `TourStep`
-
-| Parameter | Type | Description |
-|---|---|---|
-| `targetKey` | `GlobalKey` | Widget to highlight **(required)** |
-| `title` | `String?` | Tooltip title |
-| `description` | `String?` | Tooltip description |
-| `customTooltip` | `Widget?` | Custom tooltip widget |
-| `requiredAction` | `RequiredAction?` | Required gesture |
-| `validator` | `Future<bool> Function()?` | Custom validation |
-| `spotlightStyle` | `SpotlightStyle?` | Per-step spotlight style |
-| `tooltipPosition` | `TooltipPosition` | Tooltip placement |
-| `onValidated` | `VoidCallback?` | Called on successful validation |
+| **V2** ✅ | Analytics, JSON, Lottie, events, multi-target |
+| **V3** | Remote config, A/B testing, dashboard |
 
 ---
 
-## Contributing
+## FAQ
 
-Issues and pull requests are welcome on [GitHub](https://github.com/UmarAnayat/spotlight_tour).
+**Does V2 break my existing code?**  
+No. All V1 APIs work exactly as before.
+
+**Can I mix JSON and code-defined steps?**  
+Load JSON into `List<TourStep>`, then pass to `SpotlightTour.start()`.
+
+**Does Lottie work on Web?**  
+Yes. Add assets to `pubspec.yaml` in your app.
 
 ---
 

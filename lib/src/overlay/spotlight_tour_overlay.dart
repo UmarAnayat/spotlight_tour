@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../controller/spotlight_tour_controller.dart';
+import '../indicators/step_indicator.dart';
 import '../models/spotlight_style.dart';
 import '../models/tour_step.dart';
 import '../spotlight/spotlight_hit_test.dart';
@@ -10,7 +12,6 @@ import '../tooltip/tour_tooltip.dart';
 import '../utils/pointer_interaction_tracker.dart';
 import '../utils/target_resolver.dart';
 import '../widgets/tour_navigation_bar.dart';
-import '../widgets/tour_progress.dart';
 
 /// Full-screen overlay that renders the active tour step.
 class SpotlightTourOverlay extends StatefulWidget {
@@ -31,7 +32,9 @@ class SpotlightTourOverlay extends StatefulWidget {
 
 class _SpotlightTourOverlayState extends State<SpotlightTourOverlay>
     with WidgetsBindingObserver {
-  Rect? _targetRect;
+  final FocusNode _focusNode = FocusNode();
+  List<Rect> _targetRects = [];
+  Rect? _tooltipRect;
   TargetPointerListener? _pointerListener;
   late final PointerInteractionTracker _tracker;
 
@@ -44,7 +47,11 @@ class _SpotlightTourOverlayState extends State<SpotlightTourOverlay>
     WidgetsBinding.instance.addObserver(this);
     widget.controller.addListener(_onControllerChanged);
     currentStep.onStepEnter?.call();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateTarget());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateTarget();
+      widget.controller.notifyTourStarted();
+      _focusNode.requestFocus();
+    });
   }
 
   @override
@@ -63,6 +70,7 @@ class _SpotlightTourOverlayState extends State<SpotlightTourOverlay>
     widget.controller.removeListener(_onControllerChanged);
     _pointerListener?.dispose();
     _tracker.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -89,126 +97,186 @@ class _SpotlightTourOverlayState extends State<SpotlightTourOverlay>
   void _updateTarget() {
     if (!mounted || widget.controller.isDismissed) return;
 
-    final rect = TargetResolver.resolve(
-      currentStep.targetKey,
+    final rects = TargetResolver.resolveAll(
+      currentStep.resolvedTargetKeys,
       spotlightStyle,
     );
 
-    if (rect == null) {
+    if (rects.isEmpty ||
+        rects.length != currentStep.resolvedTargetKeys.length) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _updateTarget());
       return;
     }
 
-    if (_targetRect != rect) {
-      setState(() => _targetRect = rect);
+    final bounds = TargetResolver.boundingRect(rects);
+    if (bounds == null) return;
+
+    if (_targetRects != rects || _tooltipRect != bounds) {
+      setState(() {
+        _targetRects = rects;
+        _tooltipRect = bounds;
+      });
     }
 
-    _setupPointerListener(rect);
+    _setupPointerListener(rects);
   }
 
-  void _setupPointerListener(Rect rect) {
-    if (!currentStep.requiresInteraction || currentStep.requiredAction == null) {
+  void _setupPointerListener(List<Rect> rects) {
+    if (widget.controller.isPaused ||
+        !currentStep.requiresInteraction ||
+        currentStep.requiredAction == null) {
       _pointerListener?.detach();
       return;
     }
 
     if (_pointerListener == null) {
       _pointerListener = TargetPointerListener(
-        targetRect: rect,
+        targetRects: rects,
         tracker: _tracker,
       );
       _pointerListener!.attach();
     } else {
-      _pointerListener!.targetRect = rect;
+      _pointerListener!.targetRects = rects;
     }
+  }
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent || widget.controller.isPaused) {
+      return KeyEventResult.ignored;
+    }
+
+    if (event.logicalKey == LogicalKeyboardKey.escape) {
+      widget.controller.skip();
+      return KeyEventResult.handled;
+    }
+
+    if (event.logicalKey == LogicalKeyboardKey.enter ||
+        event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+      widget.controller.next();
+      return KeyEventResult.handled;
+    }
+
+    if (event.logicalKey == LogicalKeyboardKey.tab) {
+      if (widget.controller.canGoBack) {
+        widget.controller.previous();
+      }
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_targetRect == null) {
+    if (_targetRects.isEmpty || _tooltipRect == null) {
       return const SizedBox.shrink();
     }
 
     final theme = widget.theme;
     final primaryColor = theme.resolvePrimaryColor(context);
     final config = widget.controller.config;
-    final rect = _targetRect!;
+    final tooltipRect = _tooltipRect!;
     final mediaQuery = MediaQuery.of(context);
     final keyboardInset = mediaQuery.viewInsets.bottom;
+    final animationType =
+        currentStep.animationType ?? config.animationType;
 
-    return Material(
-      type: MaterialType.transparency,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          SpotlightHitTest(
-            holeRect: rect,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {},
-              child: SpotlightLayer(
-                targetRect: rect,
-                style: spotlightStyle,
-                primaryColor: primaryColor,
-              ),
-            ),
-          ),
-          PositionedTourTooltip(
-            targetRect: rect,
-            preferredPosition: currentStep.tooltipPosition,
-            theme: theme,
-            title: currentStep.title,
-            description: currentStep.description,
-            customTooltip: currentStep.customTooltip != null
-                ? _wrapCustomTooltip(currentStep.customTooltip!, theme)
-                : null,
-            keyboardInset: keyboardInset,
-          ),
-          Positioned(
-            left: mediaQuery.padding.left + 16,
-            right: mediaQuery.padding.right + 16,
-            bottom: mediaQuery.padding.bottom + keyboardInset + 16,
-            child: RepaintBoundary(
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: theme.resolveBackgroundColor(context)
-                      .withValues(alpha: 0.95),
-                  borderRadius: BorderRadius.circular(theme.borderRadius),
-                  boxShadow: theme.tooltipShadow,
+    return Semantics(
+      label:
+          'Onboarding tour step ${widget.controller.currentIndex + 1} '
+          'of ${widget.controller.totalSteps}',
+      hint: currentStep.description,
+      child: Focus(
+        focusNode: _focusNode,
+        autofocus: true,
+        onKeyEvent: _handleKeyEvent,
+        child: Material(
+          type: MaterialType.transparency,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              SpotlightHitTest(
+                holeRects: _targetRects,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {},
+                  child: SpotlightLayer(
+                    targetRects: _targetRects,
+                    style: spotlightStyle,
+                    primaryColor: primaryColor,
+                  ),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (config.showProgress)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: ListenableBuilder(
-                          listenable: widget.controller,
-                          builder: (context, _) {
-                            return TourProgress(
-                              stepCounter: widget.controller.stepCounter,
-                              progress: widget.controller.progress,
-                              progressPercent:
-                                  widget.controller.progressPercent,
-                              theme: theme,
-                            );
-                          },
-                        ),
-                      ),
-                    TourNavigationBar(
-                      controller: widget.controller,
-                      theme: theme,
-                      showNext: config.showNextButton,
-                      showBack: config.showBackButton,
-                      showSkip: config.showSkipButton,
+              ),
+              PositionedTourTooltip(
+                targetRect: tooltipRect,
+                preferredPosition: currentStep.tooltipPosition,
+                theme: theme,
+                title: currentStep.title,
+                description: currentStep.description,
+                lottieAsset: currentStep.lottieAsset,
+                animationType: animationType,
+                customTooltip: currentStep.customTooltip != null
+                    ? _wrapCustomTooltip(currentStep.customTooltip!, theme)
+                    : null,
+                keyboardInset: keyboardInset,
+              ),
+              if (widget.controller.isPaused)
+                const ModalBarrier(
+                  dismissible: false,
+                  color: Color(0x66000000),
+                ),
+              Positioned(
+                left: mediaQuery.padding.left + 16,
+                right: mediaQuery.padding.right + 16,
+                bottom: mediaQuery.padding.bottom + keyboardInset + 16,
+                child: RepaintBoundary(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: theme.resolveBackgroundColor(context)
+                          .withValues(alpha: 0.95),
+                      borderRadius: BorderRadius.circular(theme.borderRadius),
+                      boxShadow: theme.tooltipShadow,
                     ),
-                  ],
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (config.showProgress)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: ListenableBuilder(
+                              listenable: widget.controller,
+                              builder: (context, _) {
+                                return StepIndicator(
+                                  type: config.indicatorType,
+                                  currentIndex:
+                                      widget.controller.currentIndex,
+                                  totalSteps: widget.controller.totalSteps,
+                                  stepCounter:
+                                      widget.controller.stepCounter,
+                                  progress: widget.controller.progress,
+                                  progressPercent:
+                                      widget.controller.progressPercent,
+                                  theme: theme,
+                                );
+                              },
+                            ),
+                          ),
+                        TourNavigationBar(
+                          controller: widget.controller,
+                          theme: theme,
+                          showNext: config.showNextButton,
+                          showBack: config.showBackButton,
+                          showSkip: config.showSkipButton,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

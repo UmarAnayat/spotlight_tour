@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../models/tooltip_animation_type.dart';
+
 /// Visual theme for spotlight tour overlays, tooltips, and controls.
 class SpotlightTourTheme {
   /// Creates a [SpotlightTourTheme].
@@ -20,6 +22,13 @@ class SpotlightTourTheme {
     ],
     this.titleStyle,
     this.descriptionStyle,
+    this.buttonTextStyle,
+    this.progressColor,
+    this.indicatorColor,
+    this.indicatorInactiveColor,
+    this.tooltipAnimationType = TooltipAnimationType.fade,
+    this.animationDuration = const Duration(milliseconds: 320),
+    this.animationCurve = Curves.easeOutCubic,
     this.useMaterial3 = true,
     this.useCupertino = false,
   });
@@ -69,6 +78,27 @@ class SpotlightTourTheme {
   /// Description text style override.
   final TextStyle? descriptionStyle;
 
+  /// Navigation button text style override.
+  final TextStyle? buttonTextStyle;
+
+  /// Progress bar active color.
+  final Color? progressColor;
+
+  /// Step indicator active color.
+  final Color? indicatorColor;
+
+  /// Step indicator inactive color.
+  final Color? indicatorInactiveColor;
+
+  /// Default tooltip animation type.
+  final TooltipAnimationType tooltipAnimationType;
+
+  /// Default tooltip animation duration.
+  final Duration animationDuration;
+
+  /// Default tooltip animation curve.
+  final Curve animationCurve;
+
   /// Use Material 3 widgets and typography.
   final bool useMaterial3;
 
@@ -107,6 +137,32 @@ class SpotlightTourTheme {
       return CupertinoColors.secondaryLabel.resolveFrom(context);
     }
     return Theme.of(context).colorScheme.onSurfaceVariant;
+  }
+
+  /// Resolves progress indicator color.
+  Color resolveProgressColor(BuildContext context) {
+    return progressColor ?? resolvePrimaryColor(context);
+  }
+
+  /// Resolves active indicator dot color.
+  Color resolveIndicatorColor(BuildContext context) {
+    return indicatorColor ?? resolvePrimaryColor(context);
+  }
+
+  /// Resolves inactive indicator dot color.
+  Color resolveIndicatorInactiveColor(BuildContext context) {
+    return indicatorInactiveColor ??
+        resolveSecondaryTextColor(context).withValues(alpha: 0.25);
+  }
+
+  /// Resolves navigation button text style.
+  TextStyle resolveButtonTextStyle(BuildContext context) {
+    if (buttonTextStyle != null) return buttonTextStyle!;
+    return TextStyle(
+      fontSize: useCupertino ? 17 : 14,
+      fontWeight: FontWeight.w600,
+      color: resolvePrimaryColor(context),
+    );
   }
 
   /// Resolves title [TextStyle].
@@ -167,6 +223,13 @@ class SpotlightTourTheme {
     List<BoxShadow>? tooltipShadow,
     TextStyle? titleStyle,
     TextStyle? descriptionStyle,
+    TextStyle? buttonTextStyle,
+    Color? progressColor,
+    Color? indicatorColor,
+    Color? indicatorInactiveColor,
+    TooltipAnimationType? tooltipAnimationType,
+    Duration? animationDuration,
+    Curve? animationCurve,
     bool? useMaterial3,
     bool? useCupertino,
   }) {
@@ -180,6 +243,15 @@ class SpotlightTourTheme {
       tooltipShadow: tooltipShadow ?? this.tooltipShadow,
       titleStyle: titleStyle ?? this.titleStyle,
       descriptionStyle: descriptionStyle ?? this.descriptionStyle,
+      buttonTextStyle: buttonTextStyle ?? this.buttonTextStyle,
+      progressColor: progressColor ?? this.progressColor,
+      indicatorColor: indicatorColor ?? this.indicatorColor,
+      indicatorInactiveColor:
+          indicatorInactiveColor ?? this.indicatorInactiveColor,
+      tooltipAnimationType:
+          tooltipAnimationType ?? this.tooltipAnimationType,
+      animationDuration: animationDuration ?? this.animationDuration,
+      animationCurve: animationCurve ?? this.animationCurve,
       useMaterial3: useMaterial3 ?? this.useMaterial3,
       useCupertino: useCupertino ?? this.useCupertino,
     );

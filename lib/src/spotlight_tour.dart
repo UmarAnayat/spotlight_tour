@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 
+import 'analytics/tour_analytics.dart';
 import 'controller/spotlight_tour_controller.dart';
+import 'events/tour_event.dart';
+import 'events/tour_event_bus.dart';
 import 'models/spotlight_style.dart';
+import 'models/step_indicator_type.dart';
+import 'models/tooltip_animation_type.dart';
 import 'models/tour_config.dart';
 import 'models/tour_step.dart';
 import 'overlay/spotlight_tour_overlay.dart';
@@ -16,6 +21,9 @@ abstract final class SpotlightTour {
 
   /// Whether a tour is currently active.
   static bool get isActive => _overlayEntry != null;
+
+  /// Global stream of tour lifecycle events.
+  static Stream<TourEvent> get events => TourEventBus.instance.stream;
 
   /// Starts a spotlight tour with the given [steps].
   ///
@@ -38,12 +46,17 @@ abstract final class SpotlightTour {
     SpotlightTourTheme? theme,
     SpotlightStyle defaultSpotlightStyle = const SpotlightStyle(),
     bool showProgress = true,
+    StepIndicatorType indicatorType = StepIndicatorType.linear,
+    TooltipAnimationType animationType = TooltipAnimationType.fade,
     bool showNextButton = true,
     bool showBackButton = true,
     bool showSkipButton = true,
     VoidCallback? onComplete,
     VoidCallback? onSkip,
     ValueChanged<int>? onStepChanged,
+    VoidCallback? onTourStarted,
+    VoidCallback? onTourCompleted,
+    VoidCallback? onTourSkipped,
   }) {
     assert(steps.isNotEmpty, 'SpotlightTour requires at least one step.');
 
@@ -56,17 +69,30 @@ abstract final class SpotlightTour {
             ? SpotlightTourTheme.cupertino()
             : SpotlightTourTheme.material3());
 
+    final analytics = TourAnalytics(
+      onTourStarted: onTourStarted,
+      onTourCompleted: onTourCompleted ?? onComplete,
+      onTourSkipped: onTourSkipped ?? onSkip,
+      onStepChanged: onStepChanged,
+    )..reset();
+
     final config = TourConfig(
       steps: steps,
       theme: resolvedTheme,
       defaultSpotlightStyle: defaultSpotlightStyle,
       showProgress: showProgress,
+      indicatorType: indicatorType,
+      animationType: animationType,
       showNextButton: showNextButton,
       showBackButton: showBackButton,
       showSkipButton: showSkipButton,
       onComplete: onComplete,
       onSkip: onSkip,
       onStepChanged: onStepChanged,
+      onTourStarted: onTourStarted,
+      onTourCompleted: onTourCompleted,
+      onTourSkipped: onTourSkipped,
+      analytics: analytics,
     );
 
     final controller = SpotlightTourController(config: config);

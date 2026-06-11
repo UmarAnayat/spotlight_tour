@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../animations/tooltip_animation_builder.dart';
+import '../lottie/tour_lottie_widget.dart';
+import '../models/tooltip_animation_type.dart';
 import '../models/tooltip_position.dart';
 import '../theme/spotlight_tour_theme.dart';
 import '../utils/tooltip_position_calculator.dart';
 
-/// Default tooltip with title, description, and directional arrow.
+/// Default tooltip with title, description, Lottie, and directional arrow.
 class TourTooltip extends StatelessWidget {
   const TourTooltip({
     super.key,
@@ -13,22 +16,28 @@ class TourTooltip extends StatelessWidget {
     required this.theme,
     required this.position,
     required this.arrowOffset,
+    this.lottieAsset,
+    this.animationType,
     this.child,
   });
 
   final String? title;
   final String? description;
+  final String? lottieAsset;
   final SpotlightTourTheme theme;
   final TooltipPosition position;
   final double arrowOffset;
+  final TooltipAnimationType? animationType;
   final Widget? child;
 
   @override
   Widget build(BuildContext context) {
     final backgroundColor = theme.resolveBackgroundColor(context);
     final borderRadius = BorderRadius.circular(theme.borderRadius);
+    final resolvedAnimation =
+        animationType ?? theme.tooltipAnimationType;
 
-    return Material(
+    final content = Material(
       color: Colors.transparent,
       child: CustomPaint(
         painter: _TooltipArrowPainter(
@@ -50,6 +59,12 @@ class TourTooltip extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (lottieAsset != null && lottieAsset!.isNotEmpty) ...[
+                    Center(
+                      child: TourLottieWidget(assetPath: lottieAsset!),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   if (title != null && title!.isNotEmpty)
                     Text(
                       title!,
@@ -69,6 +84,13 @@ class TourTooltip extends StatelessWidget {
               ),
         ),
       ),
+    );
+
+    return TooltipAnimationBuilder(
+      animationType: resolvedAnimation,
+      duration: theme.animationDuration,
+      curve: theme.animationCurve,
+      child: content,
     );
   }
 }
@@ -147,6 +169,8 @@ class PositionedTourTooltip extends StatefulWidget {
     required this.theme,
     required this.title,
     required this.description,
+    this.lottieAsset,
+    this.animationType,
     this.customTooltip,
     this.keyboardInset = 0,
   });
@@ -156,6 +180,8 @@ class PositionedTourTooltip extends StatefulWidget {
   final SpotlightTourTheme theme;
   final String? title;
   final String? description;
+  final String? lottieAsset;
+  final TooltipAnimationType? animationType;
   final Widget? customTooltip;
   final double keyboardInset;
 
@@ -200,6 +226,7 @@ class _PositionedTourTooltipState extends State<PositionedTourTooltip> {
         titleStyle: widget.theme.resolveTitleStyle(context),
         descriptionStyle: widget.theme.resolveDescriptionStyle(context),
         padding: widget.theme.tooltipPadding,
+        lottieHeight: widget.lottieAsset != null ? 132 : 0,
       );
     }
 
@@ -224,9 +251,11 @@ class _PositionedTourTooltipState extends State<PositionedTourTooltip> {
         TourTooltip(
           title: widget.title,
           description: widget.description,
+          lottieAsset: widget.lottieAsset,
           theme: widget.theme,
           position: _layout?.position ?? widget.preferredPosition,
           arrowOffset: _layout?.arrowOffset ?? 0.5,
+          animationType: widget.animationType,
         );
 
     return Stack(

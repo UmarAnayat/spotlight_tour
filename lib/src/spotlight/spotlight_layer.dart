@@ -5,14 +5,15 @@ import 'spotlight_painter.dart';
 
 /// Animated spotlight visual layer.
 class SpotlightLayer extends StatefulWidget {
+  /// Creates a spotlight for one or more [targetRects].
   const SpotlightLayer({
     super.key,
-    required this.targetRect,
+    required this.targetRects,
     required this.style,
     required this.primaryColor,
   });
 
-  final Rect targetRect;
+  final List<Rect> targetRects;
   final SpotlightStyle style;
   final Color primaryColor;
 
@@ -64,15 +65,25 @@ class _SpotlightLayerState extends State<SpotlightLayer>
       child: AnimatedBuilder(
         animation: _pulseAnimation,
         builder: (context, child) {
+          final pulseValue =
+              widget.style.pulseAnimation ? _pulseAnimation.value : 0.0;
+          final painter = widget.targetRects.length <= 1
+              ? SpotlightPainter(
+                  targetRect: widget.targetRects.isEmpty
+                      ? Rect.zero
+                      : widget.targetRects.first,
+                  style: widget.style,
+                  primaryColor: widget.primaryColor,
+                  pulseValue: pulseValue,
+                )
+              : SpotlightPainter.multiple(
+                  targetRects: widget.targetRects,
+                  style: widget.style,
+                  primaryColor: widget.primaryColor,
+                  pulseValue: pulseValue,
+                );
           return CustomPaint(
-            painter: SpotlightPainter(
-              targetRect: widget.targetRect,
-              style: widget.style,
-              primaryColor: widget.primaryColor,
-              pulseValue: widget.style.pulseAnimation
-                  ? _pulseAnimation.value
-                  : 0,
-            ),
+            painter: painter,
             size: Size.infinite,
           );
         },

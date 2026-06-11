@@ -20,7 +20,7 @@ class TourProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = theme.resolvePrimaryColor(context);
+    final primary = theme.resolveProgressColor(context);
     final secondary = theme.resolveSecondaryTextColor(context);
 
     if (theme.useCupertino) {

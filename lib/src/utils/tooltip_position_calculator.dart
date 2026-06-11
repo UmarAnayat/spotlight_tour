@@ -182,9 +182,14 @@ class TooltipPositionCalculator {
     required TextStyle titleStyle,
     required TextStyle descriptionStyle,
     required EdgeInsets padding,
+    double lottieHeight = 0,
   }) {
     double width = 0;
     double height = padding.vertical;
+
+    if (lottieHeight > 0) {
+      height += lottieHeight;
+    }
 
     if (title != null && title.isNotEmpty) {
       final painter = TextPainter(

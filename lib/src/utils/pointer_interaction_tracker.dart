@@ -109,14 +109,14 @@ class PointerInteractionTracker {
   }
 }
 
-/// Filters global pointer events to a specific [targetRect].
+/// Filters global pointer events to one or more target rects.
 class TargetPointerListener {
   TargetPointerListener({
-    required this.targetRect,
+    required List<Rect> targetRects,
     required this.tracker,
-  });
+  }) : targetRects = List<Rect>.from(targetRects);
 
-  Rect targetRect;
+  List<Rect> targetRects;
   final PointerInteractionTracker tracker;
 
   void attach() {
@@ -128,8 +128,12 @@ class TargetPointerListener {
   }
 
   void _handleEvent(PointerEvent event) {
-    if (!targetRect.contains(event.position)) return;
-    tracker.trackEvent(event, targetRect);
+    for (final rect in targetRects) {
+      if (rect.contains(event.position)) {
+        tracker.trackEvent(event, rect);
+        return;
+      }
+    }
   }
 
   void dispose() {
